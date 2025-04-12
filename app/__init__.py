@@ -26,9 +26,11 @@ def create_app(config_class=Config):
     from app.routes import main
     from app.auth import auth
     from app.transactions import transactions
+    from app.reports import reports
 
     app.register_blueprint(main)
     app.register_blueprint(auth, url_prefix='/auth')
     app.register_blueprint(transactions, url_prefix='/transactions')
+    app.register_blueprint(reports, url_prefix='/reports')
 
     return app 

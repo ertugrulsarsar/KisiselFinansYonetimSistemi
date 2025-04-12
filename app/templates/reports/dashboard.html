@@ -1,0 +1,331 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daterangepicker@3.1.0/daterangepicker.css">
+<script src="https://cdn.jsdelivr.net/npm/moment@2.29.1/moment.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/daterangepicker@3.1.0/daterangepicker.min.js"></script>
+<style>
+.chart-container {
+    margin-bottom: 2rem;
+    padding: 1rem;
+    border-radius: 8px;
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.summary-card {
+    background-color: #fff;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.summary-card h3 {
+    margin-top: 0;
+    color: #333;
+    font-size: 1.2rem;
+}
+
+.summary-value {
+    font-size: 1.8rem;
+    font-weight: bold;
+    margin: 1rem 0;
+}
+
+.income-value {
+    color: #28a745;
+}
+
+.expense-value {
+    color: #dc3545;
+}
+
+.filter-section {
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+}
+
+.date-range-picker {
+    border: 1px solid #ced4da;
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.25rem;
+    background-color: #fff;
+}
+
+.chart-actions {
+    margin-top: 1rem;
+    text-align: right;
+}
+
+.chart-actions button {
+    margin-left: 0.5rem;
+}
+
+.top-categories {
+    margin-top: 2rem;
+}
+
+.category-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.category-name {
+    font-weight: 500;
+}
+
+.category-amount {
+    font-weight: 600;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Finansal Dashboard</h2>
+    
+    <!-- Filtreler -->
+    <div class="filter-section">
+        <div class="row">
+            <div class="col-md-4">
+                <label for="dateRange" class="form-label">Tarih Aralığı</label>
+                <input type="text" id="dateRange" class="form-control date-range-picker" />
+            </div>
+            <div class="col-md-4">
+                <label for="categoryFilter" class="form-label">Kategori</label>
+                <select id="categoryFilter" class="form-select">
+                    <option value="">Tümü</option>
+                    {% for category in categories %}
+                    <option value="{{ category }}">{{ category }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label for="typeFilter" class="form-label">İşlem Tipi</label>
+                <select id="typeFilter" class="form-select">
+                    <option value="">Tümü</option>
+                    <option value="income">Gelir</option>
+                    <option value="expense">Gider</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Özet Kartları -->
+        <div class="col-md-4">
+            <div class="summary-card">
+                <h3>Toplam Gelir</h3>
+                <div class="summary-value income-value">{{ "%.2f"|format(total_income|default(0)) }} ₺</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="summary-card">
+                <h3>Toplam Gider</h3>
+                <div class="summary-value expense-value">{{ "%.2f"|format(total_expense|default(0)) }} ₺</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="summary-card">
+                <h3>Net Durum</h3>
+                <div class="summary-value {% if (total_income|default(0) - total_expense|default(0)) >= 0 %}income-value{% else %}expense-value{% endif %}">
+                    {{ "%.2f"|format(total_income|default(0) - total_expense|default(0)) }} ₺
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <!-- Aylık Gelir-Gider Grafiği -->
+        <div class="col-md-12">
+            <div class="chart-container">
+                <div id="monthly-chart"></div>
+                <div class="chart-actions">
+                    <button class="btn btn-sm btn-outline-secondary" onclick="downloadChart('monthly-chart')">
+                        <i class="bi bi-download"></i> Grafiği İndir
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Kategori Dağılımı -->
+        <div class="col-md-6">
+            <div class="chart-container">
+                <div id="category-chart"></div>
+                <div class="chart-actions">
+                    <button class="btn btn-sm btn-outline-secondary" onclick="downloadChart('category-chart')">
+                        <i class="bi bi-download"></i> Grafiği İndir
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- En Çok Harcama Yapılan Kategoriler -->
+        <div class="col-md-6">
+            <div class="chart-container">
+                <h4>En Çok Harcama Yapılan Kategoriler</h4>
+                <div class="top-categories">
+                    {% for category in top_categories %}
+                    <div class="category-item">
+                        <span class="category-name">{{ category.name }}</span>
+                        <span class="category-amount">{{ "%.2f"|format(category.amount) }} ₺</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Grafik verilerini JavaScript değişkenlerine aktar -->
+<script type="text/javascript">
+    var chartData = {
+        monthlyChart: JSON.parse('{{ monthly_chart | tojson | safe }}'),
+        categoryChart: JSON.parse('{{ category_chart | tojson | safe }}')
+    };
+</script>
+{% endblock %}
+
+{% block extra_js %}
+<script type="text/javascript">
+// Global fonksiyon tanımlaması
+window.downloadChart = function(chartId) {
+    Plotly.downloadImage(chartId, {
+        format: 'png',
+        height: 600,
+        width: 1000,
+        filename: `finans-raporu-${chartId}`
+    });
+};
+
+$(document).ready(function() {
+    // Tarih aralığı seçici
+    $('#dateRange').daterangepicker({
+        startDate: moment().subtract(365, 'days'),
+        endDate: moment(),
+        ranges: {
+            'Son 7 Gün': [moment().subtract(6, 'days'), moment()],
+            'Son 30 Gün': [moment().subtract(29, 'days'), moment()],
+            'Bu Ay': [moment().startOf('month'), moment().endOf('month')],
+            'Geçen Ay': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
+            'Son 3 Ay': [moment().subtract(2, 'month').startOf('month'), moment()],
+            'Son 6 Ay': [moment().subtract(5, 'month').startOf('month'), moment()],
+            'Bu Yıl': [moment().startOf('year'), moment()],
+            'Geçen Yıl': [moment().subtract(1, 'year').startOf('year'), moment().subtract(1, 'year').endOf('year')]
+        },
+        locale: {
+            format: 'DD/MM/YYYY',
+            separator: ' - ',
+            applyLabel: 'Uygula',
+            cancelLabel: 'İptal',
+            fromLabel: 'Başlangıç',
+            toLabel: 'Bitiş',
+            customRangeLabel: 'Özel Aralık',
+            weekLabel: 'H',
+            daysOfWeek: ['Pz', 'Pt', 'Sa', 'Ça', 'Pe', 'Cu', 'Ct'],
+            monthNames: ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'],
+            firstDay: 1
+        }
+    }, function(start, end) {
+        updateDashboard(start.format('YYYY-MM-DD'), end.format('YYYY-MM-DD'));
+    });
+
+    // Filtreleme olayları
+    $('#categoryFilter, #typeFilter').on('change', updateFilters);
+
+    function updateFilters() {
+        const dateRange = $('#dateRange').data('daterangepicker');
+        updateDashboard(
+            dateRange.startDate.format('YYYY-MM-DD'),
+            dateRange.endDate.format('YYYY-MM-DD'),
+            $('#categoryFilter').val(),
+            $('#typeFilter').val()
+        );
+    }
+
+    function updateDashboard(startDate, endDate, category = '', type = '') {
+        fetch(`/reports/api/dashboard-data?start_date=${startDate}&end_date=${endDate}&category=${category}&type=${type}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.monthlyChart) {
+                    const monthlyLayout = {
+                        ...data.monthlyChart.layout,
+                        height: 400,
+                        margin: { t: 50, r: 50, l: 50, b: 50 }
+                    };
+                    Plotly.newPlot('monthly-chart', data.monthlyChart.data, monthlyLayout);
+                }
+                if (data.categoryChart) {
+                    const categoryLayout = {
+                        ...data.categoryChart.layout,
+                        height: 400,
+                        margin: { t: 50, r: 50, l: 50, b: 50 }
+                    };
+                    Plotly.newPlot('category-chart', data.categoryChart.data, categoryLayout);
+                }
+                
+                updateSummaryCards(data.summary);
+                updateTopCategories(data.topCategories);
+            });
+    }
+
+    function updateSummaryCards(summary) {
+        $('.income-value').text(formatCurrency(summary.totalIncome));
+        $('.expense-value').text(formatCurrency(summary.totalExpense));
+        const netAmount = summary.totalIncome - summary.totalExpense;
+        const netElement = $('.summary-card:last-child .summary-value');
+        netElement.text(formatCurrency(netAmount));
+        netElement.removeClass('income-value expense-value')
+            .addClass(netAmount >= 0 ? 'income-value' : 'expense-value');
+    }
+
+    function updateTopCategories(categories) {
+        const container = $('.top-categories');
+        container.html(categories.map(category => `
+            <div class="category-item">
+                <span class="category-name">${category.name}</span>
+                <span class="category-amount">${formatCurrency(category.amount)}</span>
+            </div>
+        `).join(''));
+    }
+
+    function formatCurrency(amount) {
+        return new Intl.NumberFormat('tr-TR', {
+            style: 'currency',
+            currency: 'TRY'
+        }).format(amount);
+    }
+
+    // Grafikleri yükle
+    if (chartData.monthlyChart) {
+        const monthlyLayout = {
+            ...chartData.monthlyChart.layout,
+            height: 400,
+            margin: { t: 50, r: 50, l: 50, b: 50 }
+        };
+        Plotly.newPlot('monthly-chart', chartData.monthlyChart.data, monthlyLayout);
+    }
+    
+    if (chartData.categoryChart) {
+        const categoryLayout = {
+            ...chartData.categoryChart.layout,
+            height: 400,
+            margin: { t: 50, r: 50, l: 50, b: 50 }
+        };
+        Plotly.newPlot('category-chart', chartData.categoryChart.data, categoryLayout);
+    }
+});
+</script>
+{% endblock %} 

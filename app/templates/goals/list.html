@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block title %}Hedefler{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Hedeflerim</h2>
+        <a href="{{ url_for('main.add_goal') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Yeni Hedef
+        </a>
+    </div>
+
+    {% if goals %}
+    <div class="row">
+        {% for goal in goals %}
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="card-title">{{ goal.title }}</h5>
+                        <div class="dropdown">
+                            <button class="btn btn-link text-dark" type="button" data-bs-toggle="dropdown">
+                                <i class="bi bi-three-dots-vertical"></i>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <a class="dropdown-item" href="{{ url_for('main.edit_goal', goal_id=goal.id) }}">
+                                        <i class="bi bi-pencil"></i> Düzenle
+                                    </a>
+                                </li>
+                                <li>
+                                    <button class="dropdown-item text-danger" onclick="deleteGoal('{{ goal.id }}')">
+                                        <i class="bi bi-trash"></i> Sil
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    {% if goal.description %}
+                    <p class="card-text mb-3">{{ goal.description }}</p>
+                    {% endif %}
+
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>Hedef Miktar:</span>
+                            <strong>{{ "%.2f"|format(goal.target_amount) }} ₺</strong>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>Mevcut Miktar:</span>
+                            <strong>{{ "%.2f"|format(goal.current_amount) }} ₺</strong>
+                        </div>
+                    </div>
+
+                    <div class="progress mb-3">
+                        {% set progress_width = goal.get_progress_percentage() %}
+                        {% set progress_class = 'bg-success' if goal.status == 'completed' else 'bg-danger' if goal.status == 'failed' else 'bg-primary' %}
+                        <div class="progress-bar {{ progress_class }}"
+                             role="progressbar"
+                             data-width="{{ progress_width }}"
+                             aria-valuenow="{{ goal.get_progress_percentage() }}"
+                             aria-valuemin="0"
+                             aria-valuemax="100">
+                            {{ "%.1f"|format(goal.get_progress_percentage()) }}%
+                        </div>
+                    </div>
+
+                    <div class="text-muted small">
+                        <div>Son Tarih: {{ goal.deadline.strftime('%d/%m/%Y') }}</div>
+                        <div>Durum: 
+                            {% if goal.status == 'completed' %}
+                            <span class="text-success">Tamamlandı</span>
+                            {% elif goal.status == 'failed' %}
+                            <span class="text-danger">Başarısız</span>
+                            {% else %}
+                            <span class="text-primary">Devam Ediyor</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="mt-3">
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="current-amount-{{ goal.id }}" 
+                                   placeholder="Mevcut miktar" min="0" step="0.01">
+                            <button class="btn btn-outline-primary" type="button" 
+                                    onclick="updateProgress('{{ goal.id }}')">
+                                Güncelle
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        Henüz bir hedef oluşturmadınız. <a href="{{ url_for('main.add_goal') }}">Yeni hedef oluşturmak için tıklayın</a>.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function deleteGoal(goalId) {
+    if (confirm('Bu hedefi silmek istediğinizden emin misiniz?')) {
+        fetch(`/goals/delete/${goalId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        });
+    }
+}
+
+function updateProgress(goalId) {
+    const input = document.getElementById(`current-amount-${goalId}`);
+    const currentAmount = parseFloat(input.value);
+    
+    if (isNaN(currentAmount) || currentAmount < 0) {
+        alert('Lütfen geçerli bir miktar girin.');
+        return;
+    }
+
+    fetch(`/goals/update_progress/${goalId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ current_amount: currentAmount })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    });
+}
+
+// Progress bar genişliklerini ayarla
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.progress-bar[data-width]').forEach(function(bar) {
+        bar.style.width = bar.getAttribute('data-width') + '%';
+    });
+});
+</script>
+{% endblock %} 

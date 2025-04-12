@@ -38,4 +38,72 @@ class Transaction(db.Model):
 
 @login_manager.user_loader
 def load_user(id):
-    return User.query.get(int(id)) 
+    return User.query.get(int(id))
+
+class Budget(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    category = db.Column(db.String(100), nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    period = db.Column(db.String(20), nullable=False)  # monthly, yearly
+    start_date = db.Column(db.Date, nullable=False)
+    end_date = db.Column(db.Date, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user = db.relationship('User', backref=db.backref('budgets', lazy=True))
+
+    def __repr__(self):
+        return f'<Budget {self.category}>'
+
+    def get_remaining_amount(self):
+        # Bu kategorideki toplam harcamayı hesapla
+        total_spent = db.session.query(db.func.sum(Transaction.amount)).filter(
+            Transaction.user_id == self.user_id,
+            Transaction.category == self.category,
+            Transaction.type == 'expense',
+            Transaction.date >= self.start_date,
+            Transaction.date <= self.end_date
+        ).scalar() or 0
+
+        return self.amount - total_spent
+
+    def get_usage_percentage(self):
+        total_spent = db.session.query(db.func.sum(Transaction.amount)).filter(
+            Transaction.user_id == self.user_id,
+            Transaction.category == self.category,
+            Transaction.type == 'expense',
+            Transaction.date >= self.start_date,
+            Transaction.date <= self.end_date
+        ).scalar() or 0
+
+        return (total_spent / self.amount) * 100 if self.amount > 0 else 0
+
+class Goal(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    title = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text)
+    target_amount = db.Column(db.Float, nullable=False)
+    current_amount = db.Column(db.Float, default=0)
+    deadline = db.Column(db.Date, nullable=False)
+    status = db.Column(db.String(20), default='active')  # active, completed, failed
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user = db.relationship('User', backref=db.backref('goals', lazy=True))
+
+    def __repr__(self):
+        return f'<Goal {self.title}>'
+
+    def get_progress_percentage(self):
+        return (self.current_amount / self.target_amount) * 100 if self.target_amount > 0 else 0
+
+    def update_status(self):
+        if self.current_amount >= self.target_amount:
+            self.status = 'completed'
+        elif self.deadline < datetime.utcnow().date():
+            self.status = 'failed'
+        else:
+            self.status = 'active'
+        db.session.commit() 

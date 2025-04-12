@@ -4,122 +4,184 @@
 
 {% block content %}
 <div class="row">
-    <div class="col-md-8">
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="card-title mb-0">Yeni İşlem Ekle</h5>
-            </div>
+    <!-- Özet Kartları -->
+    <div class="col-md-4 mb-4">
+        <div class="card bg-primary text-white h-100">
             <div class="card-body">
-                <form method="POST" action="{{ url_for('transactions.add_transaction') }}">
-                    {{ form.hidden_tag() }}
-                    <div class="mb-3">
-                        {{ form.type.label(class="form-label") }}
-                        {{ form.type(class="form-select") }}
-                        {% if form.type.errors %}
-                            <div class="text-danger">
-                                {% for error in form.type.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                        {% endif %}
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title mb-0">Toplam Gelir</h6>
+                        <h2 class="mt-2 mb-0">{{ "%.2f"|format(total_income) }} ₺</h2>
                     </div>
-                    <div class="mb-3">
-                        {{ form.amount.label(class="form-label") }}
-                        {{ form.amount(class="form-control") }}
-                        {% if form.amount.errors %}
-                            <div class="text-danger">
-                                {% for error in form.amount.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-                    <div class="mb-3">
-                        {{ form.category.label(class="form-label") }}
-                        {{ form.category(class="form-control") }}
-                        {% if form.category.errors %}
-                            <div class="text-danger">
-                                {% for error in form.category.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-                    <div class="mb-3">
-                        {{ form.description.label(class="form-label") }}
-                        {{ form.description(class="form-control") }}
-                        {% if form.description.errors %}
-                            <div class="text-danger">
-                                {% for error in form.description.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-                    <button type="submit" class="btn btn-primary">Kaydet</button>
-                </form>
+                    <i class="bi bi-arrow-up-circle fs-1"></i>
+                </div>
             </div>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="card-title mb-0">Özet</h5>
-            </div>
+    
+    <div class="col-md-4 mb-4">
+        <div class="card bg-danger text-white h-100">
             <div class="card-body">
-                <div class="mb-3">
-                    <h6>Toplam Gelir</h6>
-                    <p class="text-success">{{ "%.2f"|format(total_income) }} ₺</p>
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title mb-0">Toplam Gider</h6>
+                        <h2 class="mt-2 mb-0">{{ "%.2f"|format(total_expense) }} ₺</h2>
+                    </div>
+                    <i class="bi bi-arrow-down-circle fs-1"></i>
                 </div>
-                <div class="mb-3">
-                    <h6>Toplam Gider</h6>
-                    <p class="text-danger">{{ "%.2f"|format(total_expense) }} ₺</p>
-                </div>
-                <div>
-                    <h6>Net Durum</h6>
-                    <p class="{{ 'text-success' if (total_income - total_expense) >= 0 else 'text-danger' }}">
-                        {{ "%.2f"|format(total_income - total_expense) }} ₺
-                    </p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-4">
+        <div class="card bg-success text-white h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title mb-0">Net Durum</h6>
+                        <h2 class="mt-2 mb-0">{{ "%.2f"|format(total_income - total_expense) }} ₺</h2>
+                    </div>
+                    <i class="bi bi-wallet2 fs-1"></i>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<div class="card">
-    <div class="card-header">
-        <h5 class="card-title mb-0">Son İşlemler</h5>
-    </div>
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <thead>
-                    <tr>
-                        <th>Tarih</th>
-                        <th>Tür</th>
-                        <th>Kategori</th>
-                        <th>Açıklama</th>
-                        <th>Tutar</th>
-                    </tr>
-                </thead>
-                <tbody>
+<div class="row">
+    <!-- Son İşlemler -->
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-white">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-clock-history me-2"></i>Son İşlemler
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                {% if recent_transactions %}
+                <div class="list-group list-group-flush">
                     {% for transaction in recent_transactions %}
-                    <tr>
-                        <td>{{ transaction.date.strftime('%d.%m.%Y %H:%M') }}</td>
-                        <td>
-                            <span class="badge bg-{{ 'success' if transaction.type == 'income' else 'danger' }}">
-                                {{ 'Gelir' if transaction.type == 'income' else 'Gider' }}
-                            </span>
-                        </td>
-                        <td>{{ transaction.category }}</td>
-                        <td>{{ transaction.description }}</td>
-                        <td class="{{ 'text-success' if transaction.type == 'income' else 'text-danger' }}">
-                            {{ "%.2f"|format(transaction.amount) }} ₺
-                        </td>
-                    </tr>
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">{{ transaction.category }}</h6>
+                                <small class="text-muted">{{ transaction.description }}</small>
+                            </div>
+                            <div class="text-end">
+                                <span class="{% if transaction.type == 'income' %}text-success{% else %}text-danger{% endif %}">
+                                    {{ "%.2f"|format(transaction.amount) }} ₺
+                                </span>
+                                <br>
+                                <small class="text-muted">{{ transaction.date.strftime('%d/%m/%Y') }}</small>
+                            </div>
+                        </div>
+                    </div>
                     {% endfor %}
-                </tbody>
-            </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="bi bi-info-circle text-muted fs-1"></i>
+                    <p class="text-muted mt-2">Henüz işlem bulunmuyor</p>
+                </div>
+                {% endif %}
+            </div>
+            <div class="card-footer bg-white">
+                <a href="{{ url_for('main.list_transactions') }}" class="btn btn-outline-primary btn-sm">
+                    Tüm İşlemleri Görüntüle
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Aktif Bütçeler -->
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-white">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-wallet2 me-2"></i>Aktif Bütçeler
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                {% if active_budgets %}
+                <div class="list-group list-group-flush">
+                    {% for budget in active_budgets %}
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">{{ budget.category }}</h6>
+                                <small class="text-muted">
+                                    {{ budget.start_date.strftime('%d/%m/%Y') }} - {{ budget.end_date.strftime('%d/%m/%Y') }}
+                                </small>
+                            </div>
+                            <div class="text-end">
+                                <span class="{% if budget.get_usage_percentage() > 100 %}text-danger{% elif budget.get_usage_percentage() > 80 %}text-warning{% else %}text-success{% endif %}">
+                                    {{ "%.1f"|format(budget.get_usage_percentage()) }}%
+                                </span>
+                                <br>
+                                <small class="text-muted">{{ "%.2f"|format(budget.get_remaining_amount()) }} ₺ kaldı</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="bi bi-info-circle text-muted fs-1"></i>
+                    <p class="text-muted mt-2">Aktif bütçe bulunmuyor</p>
+                </div>
+                {% endif %}
+            </div>
+            <div class="card-footer bg-white">
+                <a href="{{ url_for('main.list_budgets') }}" class="btn btn-outline-primary btn-sm">
+                    Tüm Bütçeleri Görüntüle
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Aktif Hedefler -->
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-bullseye me-2"></i>Aktif Hedefler
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                {% if active_goals %}
+                <div class="list-group list-group-flush">
+                    {% for goal in active_goals %}
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">{{ goal.title }}</h6>
+                                <small class="text-muted">{{ goal.description }}</small>
+                            </div>
+                            <div class="text-end">
+                                <span class="{% if goal.status == 'completed' %}text-success{% elif goal.status == 'failed' %}text-danger{% else %}text-primary{% endif %}">
+                                    {{ "%.1f"|format(goal.get_progress_percentage()) }}%
+                                </span>
+                                <br>
+                                <small class="text-muted">{{ "%.2f"|format(goal.current_amount) }} / {{ "%.2f"|format(goal.target_amount) }} ₺</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="bi bi-info-circle text-muted fs-1"></i>
+                    <p class="text-muted mt-2">Aktif hedef bulunmuyor</p>
+                </div>
+                {% endif %}
+            </div>
+            <div class="card-footer bg-white">
+                <a href="{{ url_for('main.list_goals') }}" class="btn btn-outline-primary btn-sm">
+                    Tüm Hedefleri Görüntüle
+                </a>
+            </div>
         </div>
     </div>
 </div>

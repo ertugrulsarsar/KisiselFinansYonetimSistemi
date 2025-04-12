@@ -139,6 +139,6 @@ Bu proje MIT lisansı altında lisanslanmıştır. Detaylar için [LICENSE](LICE
 
 ## İletişim
 
-Proje Sahibi - [@twitter_handle](https://twitter.com/twitter_handle)
+Proje Sahibi: Ertuğrul Sarsar 
 
 Proje Linki: [https://github.com/kullaniciadi/kisisel-finans-yonetim-sistemi](https://github.com/kullaniciadi/kisisel-finans-yonetim-sistemi) 
