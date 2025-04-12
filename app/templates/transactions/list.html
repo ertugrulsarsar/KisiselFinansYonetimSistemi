@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}İşlemler{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0">İşlemler</h5>
+        <a href="{{ url_for('main.add_transaction') }}" class="btn btn-primary btn-sm">Yeni İşlem Ekle</a>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Tarih</th>
+                        <th>Tür</th>
+                        <th>Kategori</th>
+                        <th>Açıklama</th>
+                        <th>Tutar</th>
+                        <th>İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for transaction in transactions %}
+                    <tr>
+                        <td>{{ transaction.date.strftime('%d.%m.%Y %H:%M') }}</td>
+                        <td>
+                            <span class="badge bg-{{ 'success' if transaction.type == 'income' else 'danger' }}">
+                                {{ 'Gelir' if transaction.type == 'income' else 'Gider' }}
+                            </span>
+                        </td>
+                        <td>{{ transaction.category }}</td>
+                        <td>{{ transaction.description }}</td>
+                        <td class="{{ 'text-success' if transaction.type == 'income' else 'text-danger' }}">
+                            {{ "%.2f"|format(transaction.amount) }} ₺
+                        </td>
+                        <td>
+                            <a href="{{ url_for('main.edit_transaction', transaction_id=transaction.id) }}" 
+                               class="btn btn-warning btn-sm">Düzenle</a>
+                            <form style="display: inline;" method="POST" action="{{ url_for('main.delete_transaction', transaction_id=transaction.id) }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-danger btn-sm">Sil</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const deleteForms = document.querySelectorAll('form[action*="/transactions/delete/"]');
+    
+    deleteForms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            fetch(this.action, {
+                method: 'POST',
+                body: new FormData(this)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        });
+    });
+});
+</script>
+{% endblock %} 

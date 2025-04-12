@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}İşlem Düzenle{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">İşlem Düzenle</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('main.edit_transaction', transaction_id=transaction.id) }}">
+                        {{ form.hidden_tag() }}
+                        <div class="mb-3">
+                            {{ form.type.label(class="form-label") }}
+                            {{ form.type(class="form-select") }}
+                            {% if form.type.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.type.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.amount.label(class="form-label") }}
+                            {{ form.amount(class="form-control") }}
+                            {% if form.amount.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.amount.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.category.label(class="form-label") }}
+                            {{ form.category(class="form-control") }}
+                            {% if form.category.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.category.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.description.label(class="form-label") }}
+                            {{ form.description(class="form-control") }}
+                            {% if form.description.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.description.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">Kaydet</button>
+                            <a href="{{ url_for('main.list_transactions') }}" class="btn btn-secondary">İptal</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}Ana Sayfa{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Yeni İşlem Ekle</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('transactions.add_transaction') }}">
+                    {{ form.hidden_tag() }}
+                    <div class="mb-3">
+                        {{ form.type.label(class="form-label") }}
+                        {{ form.type(class="form-select") }}
+                        {% if form.type.errors %}
+                            <div class="text-danger">
+                                {% for error in form.type.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.amount.label(class="form-label") }}
+                        {{ form.amount(class="form-control") }}
+                        {% if form.amount.errors %}
+                            <div class="text-danger">
+                                {% for error in form.amount.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.category.label(class="form-label") }}
+                        {{ form.category(class="form-control") }}
+                        {% if form.category.errors %}
+                            <div class="text-danger">
+                                {% for error in form.category.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.description.label(class="form-label") }}
+                        {{ form.description(class="form-control") }}
+                        {% if form.description.errors %}
+                            <div class="text-danger">
+                                {% for error in form.description.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <button type="submit" class="btn btn-primary">Kaydet</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Özet</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <h6>Toplam Gelir</h6>
+                    <p class="text-success">{{ "%.2f"|format(total_income) }} ₺</p>
+                </div>
+                <div class="mb-3">
+                    <h6>Toplam Gider</h6>
+                    <p class="text-danger">{{ "%.2f"|format(total_expense) }} ₺</p>
+                </div>
+                <div>
+                    <h6>Net Durum</h6>
+                    <p class="{{ 'text-success' if (total_income - total_expense) >= 0 else 'text-danger' }}">
+                        {{ "%.2f"|format(total_income - total_expense) }} ₺
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0">Son İşlemler</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Tarih</th>
+                        <th>Tür</th>
+                        <th>Kategori</th>
+                        <th>Açıklama</th>
+                        <th>Tutar</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for transaction in recent_transactions %}
+                    <tr>
+                        <td>{{ transaction.date.strftime('%d.%m.%Y %H:%M') }}</td>
+                        <td>
+                            <span class="badge bg-{{ 'success' if transaction.type == 'income' else 'danger' }}">
+                                {{ 'Gelir' if transaction.type == 'income' else 'Gider' }}
+                            </span>
+                        </td>
+                        <td>{{ transaction.category }}</td>
+                        <td>{{ transaction.description }}</td>
+                        <td class="{{ 'text-success' if transaction.type == 'income' else 'text-danger' }}">
+                            {{ "%.2f"|format(transaction.amount) }} ₺
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const deleteButtons = document.querySelectorAll('.delete-btn');
+    deleteButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const transactionId = this.getAttribute('data-transaction-id');
+            confirmDelete(transactionId);
+        });
+    });
+});
+</script>
+{% endblock %} 
