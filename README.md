@@ -50,26 +50,6 @@ Bu proje, kullanıcıların gelir ve giderlerini takip ederek aylık bütçe yö
    flask run
    ```
 
-## Proje Yapısı
-
-```
-budget_app/
-├── app/
-│   ├── __init__.py
-│   ├── models.py
-│   ├── routes.py
-│   ├── forms.py
-│   └── static/
-│       ├── css/
-│       ├── js/
-│       └── img/
-├── migrations/
-├── tests/
-├── config.py
-├── requirements.txt
-└── run.py
-```
-
 ## Geliştirme Roadmap
 
 ### Faz 1: Temel Yapı (MVP)
@@ -141,4 +121,4 @@ Bu proje MIT lisansı altında lisanslanmıştır. Detaylar için [LICENSE](LICE
 
 Proje Sahibi: Ertuğrul Sarsar 
 
-Proje Linki: [https://github.com/kullaniciadi/kisisel-finans-yonetim-sistemi](https://github.com/kullaniciadi/kisisel-finans-yonetim-sistemi) 
+Proje Linki: [https://github.com/ertugrulsarsar/KisiselFinansYonetimSistemi](https://github.com/ertugrulsarsar/KisiselFinansYonetimSistemi)
