@@ -8,7 +8,9 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(64), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(128))
-    transactions = db.relationship('Transaction', backref='user', lazy=True)
+    transactions = db.relationship('Transaction', backref='user', lazy='dynamic')
+    budgets = db.relationship('Budget', backref='user', lazy='dynamic')
+    goals = db.relationship('Goal', backref='user', lazy='dynamic')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def set_password(self, password):
@@ -17,20 +19,27 @@ class User(UserMixin, db.Model):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
+class Category(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(64), unique=True, nullable=False)
+    type = db.Column(db.String(10), nullable=False)  # 'income' veya 'expense'
+    transactions = db.relationship('Transaction', backref='category', lazy='dynamic')
+    budgets = db.relationship('Budget', backref='category', lazy='dynamic')
+
 class Transaction(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    amount = db.Column(db.Float, nullable=False)
-    category = db.Column(db.String(50), nullable=False)
-    description = db.Column(db.String(200))
     type = db.Column(db.String(10), nullable=False)  # 'income' veya 'expense'
-    date = db.Column(db.DateTime, default=datetime.utcnow)
+    amount = db.Column(db.Float, nullable=False)
+    description = db.Column(db.String(200))
+    date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    category_id = db.Column(db.Integer, db.ForeignKey('category.id'), nullable=False)
 
     def to_dict(self):
         return {
             'id': self.id,
             'amount': self.amount,
-            'category': self.category,
+            'category': self.category.name,
             'description': self.description,
             'type': self.type,
             'date': self.date.isoformat()
@@ -42,25 +51,22 @@ def load_user(id):
 
 class Budget(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    category = db.Column(db.String(100), nullable=False)
     amount = db.Column(db.Float, nullable=False)
-    period = db.Column(db.String(20), nullable=False)  # monthly, yearly
-    start_date = db.Column(db.Date, nullable=False)
-    end_date = db.Column(db.Date, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-    user = db.relationship('User', backref=db.backref('budgets', lazy=True))
+    spent_amount = db.Column(db.Float, default=0)
+    period = db.Column(db.String(10), nullable=False)  # 'daily', 'weekly', 'monthly', 'yearly'
+    start_date = db.Column(db.DateTime, nullable=False)
+    end_date = db.Column(db.DateTime, nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    category_id = db.Column(db.Integer, db.ForeignKey('category.id'), nullable=False)
 
     def __repr__(self):
-        return f'<Budget {self.category}>'
+        return f'<Budget {self.category.name}>'
 
     def get_remaining_amount(self):
         # Bu kategorideki toplam harcamayı hesapla
         total_spent = db.session.query(db.func.sum(Transaction.amount)).filter(
             Transaction.user_id == self.user_id,
-            Transaction.category == self.category,
+            Transaction.category_id == self.category_id,
             Transaction.type == 'expense',
             Transaction.date >= self.start_date,
             Transaction.date <= self.end_date
@@ -71,7 +77,7 @@ class Budget(db.Model):
     def get_usage_percentage(self):
         total_spent = db.session.query(db.func.sum(Transaction.amount)).filter(
             Transaction.user_id == self.user_id,
-            Transaction.category == self.category,
+            Transaction.category_id == self.category_id,
             Transaction.type == 'expense',
             Transaction.date >= self.start_date,
             Transaction.date <= self.end_date
@@ -81,17 +87,13 @@ class Budget(db.Model):
 
 class Goal(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     title = db.Column(db.String(100), nullable=False)
-    description = db.Column(db.Text)
+    description = db.Column(db.String(200))
     target_amount = db.Column(db.Float, nullable=False)
     current_amount = db.Column(db.Float, default=0)
-    deadline = db.Column(db.Date, nullable=False)
-    status = db.Column(db.String(20), default='active')  # active, completed, failed
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-    user = db.relationship('User', backref=db.backref('goals', lazy=True))
+    deadline = db.Column(db.DateTime, nullable=False)
+    is_completed = db.Column(db.Boolean, default=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
     def __repr__(self):
         return f'<Goal {self.title}>'
@@ -101,9 +103,7 @@ class Goal(db.Model):
 
     def update_status(self):
         if self.current_amount >= self.target_amount:
-            self.status = 'completed'
-        elif self.deadline < datetime.utcnow().date():
-            self.status = 'failed'
-        else:
-            self.status = 'active'
+            self.is_completed = True
+        elif self.deadline < datetime.utcnow():
+            self.is_completed = False
         db.session.commit() 

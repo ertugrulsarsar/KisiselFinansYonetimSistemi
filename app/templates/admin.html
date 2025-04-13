@@ -1,0 +1,317 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Paneli{% endblock %}
+
+{% block styles %}
+<style>
+.admin-sidebar {
+    min-width: 250px;
+    min-height: calc(100vh - 56px);
+    background: #343a40;
+}
+.admin-content {
+    flex: 1;
+}
+.stat-card {
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.chart-card {
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.table-card {
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+</style>
+{% endblock %}
+
+{% block app_content %}
+<div class="d-flex">
+    <!-- Sol Sidebar -->
+    <div class="admin-sidebar">
+        <div class="p-3">
+            <div class="mb-4">
+                <small class="text-uppercase fw-bold text-muted d-block mb-2">CORE</small>
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a href="#" class="nav-link text-white active">
+                            <i class="fas fa-tachometer-alt me-2"></i>
+                            Dashboard
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            <div class="mb-4">
+                <small class="text-uppercase fw-bold text-muted d-block mb-2">INTERFACE</small>
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a href="#" class="nav-link text-white d-flex align-items-center justify-content-between">
+                            <span><i class="fas fa-columns me-2"></i> Layouts</span>
+                            <i class="fas fa-angle-right"></i>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link text-white d-flex align-items-center justify-content-between">
+                            <span><i class="fas fa-book me-2"></i> Pages</span>
+                            <i class="fas fa-angle-right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            <div class="mb-4">
+                <small class="text-uppercase fw-bold text-muted d-block mb-2">ADDONS</small>
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a href="#" class="nav-link text-white">
+                            <i class="fas fa-chart-area me-2"></i>
+                            Charts
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link text-white">
+                            <i class="fas fa-table me-2"></i>
+                            Tables
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ana İçerik -->
+    <div class="admin-content p-4">
+        <div class="container-fluid">
+            <h1 class="h3 mb-4">Dashboard</h1>
+            
+            <!-- İstatistik Kartları -->
+            <div class="row mb-4">
+                <div class="col-xl-3 col-md-6">
+                    <div class="card stat-card bg-primary text-white h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="small text-white-50">Toplam Kullanıcı</div>
+                                    <div class="display-6">{{ total_users }}</div>
+                                </div>
+                                <i class="fas fa-users fa-2x opacity-50"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-md-6">
+                    <div class="card stat-card bg-warning text-white h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="small text-white-50">Aktif Kullanıcılar</div>
+                                    <div class="display-6">{{ active_users }}</div>
+                                </div>
+                                <i class="fas fa-user-check fa-2x opacity-50"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-md-6">
+                    <div class="card stat-card bg-success text-white h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="small text-white-50">Toplam İşlem</div>
+                                    <div class="display-6">{{ total_transactions }}</div>
+                                </div>
+                                <i class="fas fa-exchange-alt fa-2x opacity-50"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-md-6">
+                    <div class="card stat-card bg-danger text-white h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="small text-white-50">Toplam Bütçe</div>
+                                    <div class="display-6">{{ total_budgets }}</div>
+                                </div>
+                                <i class="fas fa-wallet fa-2x opacity-50"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Grafikler -->
+            <div class="row mb-4">
+                <div class="col-xl-8">
+                    <div class="card chart-card">
+                        <div class="card-header bg-transparent border-0">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-chart-area me-1"></i>
+                                    Area Chart Example
+                                </h5>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="areaChart" height="300"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-4">
+                    <div class="card chart-card">
+                        <div class="card-header bg-transparent border-0">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-chart-bar me-1"></i>
+                                    Bar Chart Example
+                                </h5>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="barChart" height="300"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kullanıcı Tablosu -->
+            <div class="card table-card">
+                <div class="card-header bg-transparent border-0">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-table me-1"></i>
+                            Kullanıcı Listesi
+                        </h5>
+                        <button class="btn btn-primary btn-sm">
+                            <i class="fas fa-plus me-1"></i>
+                            Yeni Kullanıcı
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table id="usersTable" class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Kullanıcı Adı</th>
+                                    <th>E-posta</th>
+                                    <th>Kayıt Tarihi</th>
+                                    <th>Son Giriş</th>
+                                    <th>İşlemler</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in users %}
+                                <tr>
+                                    <td>{{ user.id }}</td>
+                                    <td>{{ user.username }}</td>
+                                    <td>{{ user.email }}</td>
+                                    <td>{{ user.created_at.strftime('%d.%m.%Y') }}</td>
+                                    <td>{{ user.last_login.strftime('%d.%m.%Y %H:%M') if user.last_login else '-' }}</td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <button class="btn btn-sm btn-info me-1" title="Düzenle">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-danger" title="Sil" data-user-id="{{ user.id }}">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // DataTable
+    $('#usersTable').DataTable({
+        language: {
+            url: '//cdn.datatables.net/plug-ins/1.11.5/i18n/tr.json'
+        }
+    });
+
+    // Area Chart
+    var areaCtx = document.getElementById('areaChart').getContext('2d');
+    var myAreaChart = new Chart(areaCtx, {
+        type: 'line',
+        data: {
+            labels: ['Mar 1', 'Mar 3', 'Mar 5', 'Mar 7', 'Mar 9', 'Mar 11', 'Mar 13'],
+            datasets: [{
+                label: 'Sessions',
+                data: [10000, 30000, 20000, 18000, 28000, 25000, 35000],
+                fill: true,
+                borderColor: 'rgb(75, 192, 192)',
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                tension: 0.1
+            }]
+        },
+        options: {
+            maintainAspectRatio: false
+        }
+    });
+
+    // Bar Chart
+    var barCtx = document.getElementById('barChart').getContext('2d');
+    var myBarChart = new Chart(barCtx, {
+        type: 'bar',
+        data: {
+            labels: ['January', 'February', 'March', 'April', 'May', 'June'],
+            datasets: [{
+                label: 'Revenue',
+                data: [4000, 5000, 6000, 7000, 9000, 15000],
+                backgroundColor: 'rgba(0, 123, 255, 0.8)'
+            }]
+        },
+        options: {
+            maintainAspectRatio: false
+        }
+    });
+
+    // Kullanıcı Silme İşlemi
+    document.querySelectorAll('[data-user-id]').forEach(button => {
+        button.addEventListener('click', function() {
+            const userId = this.getAttribute('data-user-id');
+            if (confirm('Bu kullanıcıyı silmek istediğinizden emin misiniz?')) {
+                fetch(`/admin/delete_user/${userId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.reload();
+                    } else {
+                        alert('Kullanıcı silinirken bir hata oluştu!');
+                    }
+                })
+                .catch(error => {
+                    console.error('Hata:', error);
+                    alert('Bir hata oluştu!');
+                });
+            }
+        });
+    });
+});
+</script>
+{% endblock %} 

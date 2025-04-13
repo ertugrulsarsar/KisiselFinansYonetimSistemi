@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+
+{% block title %}Raporlar{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="h3 mb-4">Raporlar</h1>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Aylık Gelir-Gider Grafiği -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Aylık Gelir-Gider Analizi</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="monthlyChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Kategori Bazlı Harcama Grafiği -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Kategori Bazlı Harcama Analizi</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Bütçe Durumu -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Bütçe Durumu</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="budgetChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hedef İlerleme Durumu -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Hedef İlerleme Durumu</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="goalChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Template verilerini JavaScript değişkenlerine aktar
+const chartData = {
+    months: JSON.parse('{{ months|tojson|safe }}'),
+    incomeData: JSON.parse('{{ income_data|tojson|safe }}'),
+    expenseData: JSON.parse('{{ expense_data|tojson|safe }}'),
+    budgetLabels: JSON.parse('{{ budget_labels|tojson|safe }}'),
+    budgetData: JSON.parse('{{ budget_data|tojson|safe }}'),
+    completedGoals: parseInt('{{ completed_goals|default(0) }}'),
+    activeGoalsCount: parseInt('{{ active_goals|length }}')
+};
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Aylık Gelir-Gider Grafiği
+    const monthlyCtx = document.getElementById('monthlyChart').getContext('2d');
+    new Chart(monthlyCtx, {
+        type: 'line',
+        data: {
+            labels: chartData.months,
+            datasets: [{
+                label: 'Gelir',
+                data: chartData.incomeData,
+                borderColor: 'rgb(75, 192, 192)',
+                tension: 0.1
+            }, {
+                label: 'Gider',
+                data: chartData.expenseData,
+                borderColor: 'rgb(255, 99, 132)',
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top'
+                }
+            }
+        }
+    });
+
+    // Kategori Bazlı Harcama Grafiği
+    const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+    new Chart(categoryCtx, {
+        type: 'pie',
+        data: {
+            labels: chartData.budgetLabels,
+            datasets: [{
+                data: chartData.budgetData,
+                backgroundColor: [
+                    'rgb(255, 99, 132)',
+                    'rgb(54, 162, 235)',
+                    'rgb(255, 205, 86)',
+                    'rgb(75, 192, 192)',
+                    'rgb(153, 102, 255)'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'right'
+                }
+            }
+        }
+    });
+
+    // Bütçe Durumu Grafiği
+    const budgetCtx = document.getElementById('budgetChart').getContext('2d');
+    new Chart(budgetCtx, {
+        type: 'bar',
+        data: {
+            labels: chartData.budgetLabels,
+            datasets: [{
+                label: 'Bütçe',
+                data: chartData.budgetData,
+                backgroundColor: 'rgb(75, 192, 192)'
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top'
+                }
+            }
+        }
+    });
+
+    // Hedef İlerleme Durumu Grafiği
+    const goalCtx = document.getElementById('goalChart').getContext('2d');
+    new Chart(goalCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Tamamlanan', 'Devam Eden'],
+            datasets: [{
+                data: [chartData.completedGoals, chartData.activeGoalsCount],
+                backgroundColor: [
+                    'rgb(75, 192, 192)',
+                    'rgb(255, 99, 132)'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'right'
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %} 

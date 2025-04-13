@@ -1,0 +1,392 @@
+{% extends "base.html" %}
+
+{% block title %}Raporlar{% endblock %}
+
+{% block styles %}
+<link href="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.css" rel="stylesheet">
+<style>
+.card {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    transition: transform 0.2s ease-in-out;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+
+.stat-card {
+    padding: 1.5rem;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+}
+
+.chart-container {
+    position: relative;
+    height: 300px;
+    width: 100%;
+}
+
+.period-selector {
+    background: white;
+    border-radius: 10px;
+    padding: 0.5rem;
+    display: inline-flex;
+    gap: 0.5rem;
+}
+
+.period-btn {
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.period-btn.active {
+    background: #4F46E5;
+    color: white;
+}
+
+.period-btn:not(.active):hover {
+    background: #F3F4F6;
+}
+
+.dashboard-grid {
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+@media (min-width: 1024px) {
+    .dashboard-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.animate-fade {
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+</style>
+{% endblock %}
+
+{% block app_content %}
+<div class="container-fluid p-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-2xl font-bold text-gray-800">Finansal Raporlar</h2>
+        <div class="period-selector">
+            <button class="period-btn active" onclick="changePeriod('monthly')">Aylık</button>
+            <button class="period-btn" onclick="changePeriod('yearly')">Yıllık</button>
+        </div>
+    </div>
+
+    <div class="dashboard-grid animate-fade">
+        <!-- Gelir/Gider Özeti -->
+        <div class="card p-4 mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="font-semibold text-gray-700">Gelir ve Gider Özeti</h5>
+                <div class="text-sm text-gray-500">Son güncelleme: {{ datetime.now().strftime('%d.%m.%Y %H:%M') }}</div>
+            </div>
+            <div class="chart-container">
+                <canvas id="incomeExpenseChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Kategori Dağılımı -->
+        <div class="card p-4 mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="font-semibold text-gray-700">Kategori Dağılımı</h5>
+                <select class="form-select form-select-sm w-auto" onchange="updateCategoryChart(this.value)">
+                    <option value="expense">Giderler</option>
+                    <option value="income">Gelirler</option>
+                </select>
+            </div>
+            <div class="chart-container">
+                <canvas id="categoryChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trend Analizi -->
+    <div class="card p-4 mb-4 animate-fade">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="font-semibold text-gray-700">Finansal Trend Analizi</h5>
+            <div class="btn-group btn-group-sm">
+                <button class="btn btn-outline-secondary active" onclick="updateTrendChart('net')">Net Değişim</button>
+                <button class="btn btn-outline-secondary" onclick="updateTrendChart('cumulative')">Kümülatif</button>
+            </div>
+        </div>
+        <div class="chart-container" style="height: 250px;">
+            <canvas id="trendChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Özet Kartları -->
+    <div class="row g-4 mb-4 animate-fade">
+        <div class="col-md-3 col-sm-6">
+            <div class="stat-card bg-success bg-opacity-10">
+                <h6 class="text-success mb-2">Toplam Gelir</h6>
+                <h3 class="text-success" id="totalIncome">₺0.00</h3>
+                <div class="small text-success" id="incomeChange">
+                    <i class="fas fa-arrow-up me-1"></i>
+                    <span>0%</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="stat-card bg-danger bg-opacity-10">
+                <h6 class="text-danger mb-2">Toplam Gider</h6>
+                <h3 class="text-danger" id="totalExpense">₺0.00</h3>
+                <div class="small text-danger" id="expenseChange">
+                    <i class="fas fa-arrow-up me-1"></i>
+                    <span>0%</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="stat-card bg-primary bg-opacity-10">
+                <h6 class="text-primary mb-2">Net Durum</h6>
+                <h3 class="text-primary" id="netAmount">₺0.00</h3>
+                <div class="small text-primary" id="netChange">
+                    <i class="fas fa-arrow-up me-1"></i>
+                    <span>0%</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="stat-card bg-info bg-opacity-10">
+                <h6 class="text-info mb-2">Tasarruf Oranı</h6>
+                <h3 class="text-info" id="savingsRate">%0</h3>
+                <div class="small text-info" id="savingsChange">
+                    <i class="fas fa-arrow-up me-1"></i>
+                    <span>0%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js kütüphanesi -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+let currentPeriod = 'monthly';
+let charts = {
+    incomeExpense: null,
+    category: null,
+    trend: null
+};
+
+const chartColors = {
+    income: {
+        background: 'rgba(40, 167, 69, 0.2)',
+        border: 'rgb(40, 167, 69)'
+    },
+    expense: {
+        background: 'rgba(220, 53, 69, 0.2)',
+        border: 'rgb(220, 53, 69)'
+    },
+    trend: {
+        background: 'rgba(54, 162, 235, 0.2)',
+        border: 'rgb(54, 162, 235)'
+    }
+};
+
+const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+        legend: {
+            position: 'bottom'
+        }
+    },
+    animation: {
+        duration: 1000,
+        easing: 'easeInOutQuart'
+    }
+};
+
+function formatCurrency(amount) {
+    return new Intl.NumberFormat('tr-TR', { 
+        style: 'currency', 
+        currency: 'TRY',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2 
+    }).format(amount);
+}
+
+function updateCharts(data) {
+    // Gelir-Gider Grafiği
+    if (charts.incomeExpense) charts.incomeExpense.destroy();
+    charts.incomeExpense = new Chart(document.getElementById('incomeExpenseChart'), {
+        type: 'bar',
+        data: {
+            labels: data.labels,
+            datasets: [{
+                label: 'Gelir',
+                data: data.income_data,
+                backgroundColor: chartColors.income.background,
+                borderColor: chartColors.income.border,
+                borderWidth: 2,
+                borderRadius: 4
+            }, {
+                label: 'Gider',
+                data: data.expense_data,
+                backgroundColor: chartColors.expense.background,
+                borderColor: chartColors.expense.border,
+                borderWidth: 2,
+                borderRadius: 4
+            }]
+        },
+        options: {
+            ...chartOptions,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        drawBorder: false
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    }
+                }
+            }
+        }
+    });
+
+    // Kategori Grafiği
+    const categoryLabels = Object.keys(data.category_data);
+    const categoryValues = Object.values(data.category_data);
+    if (charts.category) charts.category.destroy();
+    charts.category = new Chart(document.getElementById('categoryChart'), {
+        type: 'doughnut',
+        data: {
+            labels: categoryLabels,
+            datasets: [{
+                data: categoryValues,
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.7)',
+                    'rgba(54, 162, 235, 0.7)',
+                    'rgba(255, 206, 86, 0.7)',
+                    'rgba(75, 192, 192, 0.7)',
+                    'rgba(153, 102, 255, 0.7)'
+                ],
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            ...chartOptions,
+            cutout: '60%',
+            plugins: {
+                legend: {
+                    position: 'right'
+                }
+            }
+        }
+    });
+
+    // Trend Grafiği
+    if (charts.trend) charts.trend.destroy();
+    charts.trend = new Chart(document.getElementById('trendChart'), {
+        type: 'line',
+        data: {
+            labels: data.labels,
+            datasets: [{
+                label: 'Net Değişim',
+                data: data.trend_data,
+                borderColor: chartColors.trend.border,
+                backgroundColor: chartColors.trend.background,
+                tension: 0.4,
+                fill: true,
+                pointRadius: 4,
+                pointHoverRadius: 6
+            }]
+        },
+        options: {
+            ...chartOptions,
+            scales: {
+                y: {
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    }
+                }
+            }
+        }
+    });
+
+    // İstatistik kartlarını güncelle
+    document.getElementById('totalIncome').textContent = formatCurrency(data.total_income);
+    document.getElementById('totalExpense').textContent = formatCurrency(data.total_expense);
+    
+    const netAmount = data.total_income - data.total_expense;
+    document.getElementById('netAmount').textContent = formatCurrency(netAmount);
+    
+    const savingsRate = data.total_income > 0 
+        ? ((data.total_income - data.total_expense) / data.total_income * 100).toFixed(1)
+        : 0;
+    document.getElementById('savingsRate').textContent = `%${savingsRate}`;
+}
+
+function changePeriod(period) {
+    currentPeriod = period;
+    document.querySelectorAll('.period-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    event.target.classList.add('active');
+    fetchData();
+}
+
+function fetchData() {
+    fetch(`/api/reports/data?period=${currentPeriod}`)
+        .then(response => response.json())
+        .then(data => {
+            updateCharts(data);
+            // Animasyonlu geçiş efekti
+            document.querySelectorAll('.animate-fade').forEach(el => {
+                el.style.opacity = 0;
+                setTimeout(() => {
+                    el.style.opacity = 1;
+                }, 100);
+            });
+        })
+        .catch(error => {
+            console.error('Veri alınırken hata oluştu:', error);
+            // Hata durumunda kullanıcıya bilgi ver
+            const alertHtml = `
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    Veriler alınırken bir hata oluştu. Lütfen sayfayı yenileyin.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            document.querySelector('.container-fluid').insertAdjacentHTML('afterbegin', alertHtml);
+        });
+}
+
+// Sayfa yüklendiğinde verileri al
+document.addEventListener('DOMContentLoaded', fetchData);
+
+// Responsive davranış için olay dinleyicisi
+window.addEventListener('resize', () => {
+    Object.values(charts).forEach(chart => {
+        if (chart) chart.resize();
+    });
+});
+</script>
+{% endblock %} 
