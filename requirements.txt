@@ -1,0 +1,6 @@
+Flask
+Python-dotenv
+pyodbc
+Flask-SQLAlchemy
+Flask-Migrate
+
