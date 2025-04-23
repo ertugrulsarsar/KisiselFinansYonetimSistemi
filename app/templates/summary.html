@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block title %}Özet - Kişisel Finans Yönetimi{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2><i class="fas fa-chart-pie me-2"></i>Finansal Özet</h2>
+    </div>
+</div>
+
+<!-- Özet Kartları -->
+<div class="row mb-4">
+    <!-- Gelir Kartı -->
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 border-success">
+            <div class="card-body text-center">
+                <h5 class="card-title text-success">
+                    <i class="fas fa-arrow-up me-2"></i>Toplam Gelir
+                </h5>
+                <h3 class="card-text text-success">
+                    {{ "%.2f"|format(summary.total_income) }} ₺
+                </h3>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Gider Kartı -->
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 border-danger">
+            <div class="card-body text-center">
+                <h5 class="card-title text-danger">
+                    <i class="fas fa-arrow-down me-2"></i>Toplam Gider
+                </h5>
+                <h3 class="card-text text-danger">
+                    {{ "%.2f"|format(summary.total_expense) }} ₺
+                </h3>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bakiye Kartı -->
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 {% if summary.balance >= 0 %}border-primary{% else %}border-warning{% endif %}">
+            <div class="card-body text-center">
+                <h5 class="card-title {% if summary.balance >= 0 %}text-primary{% else %}text-warning{% endif %}">
+                    <i class="fas fa-wallet me-2"></i>Net Bakiye
+                </h5>
+                <h3 class="card-text {% if summary.balance >= 0 %}text-primary{% else %}text-warning{% endif %}">
+                    {{ "%.2f"|format(summary.balance) }} ₺
+                </h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Kategori Özeti -->
+<div class="card">
+    <div class="card-header bg-light">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-tags me-2"></i>Kategori Bazlı Özet
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Kategori</th>
+                        <th class="text-end">Toplam</th>
+                        <th>Grafik</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in summary.category_summary %}
+                    <tr>
+                        <td>{{ item.category }}</td>
+                        <td class="text-end">{{ "%.2f"|format(item.total) }} ₺</td>
+                        <td>
+                            <div class="progress">
+                                <div class="progress-bar bg-primary" role="progressbar" 
+                                     style="width: {{ (item.total / summary.total_expense * 100)|round }}%">
+                                    {{ (item.total / summary.total_expense * 100)|round }}%
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Grafik -->
+<div class="card mt-4">
+    <div class="card-header bg-light">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-chart-bar me-2"></i>Gelir/Gider Grafiği
+        </h5>
+    </div>
+    <div class="card-body">
+        <canvas id="incomeExpenseChart"></canvas>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Gelir/Gider grafiği
+    const ctx = document.getElementById('incomeExpenseChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Gelir', 'Gider'],
+            datasets: [{
+                label: 'Tutar (₺)',
+                data: [{{ summary.total_income }}, {{ summary.total_expense }}],
+                backgroundColor: [
+                    'rgba(40, 167, 69, 0.5)',  // success
+                    'rgba(220, 53, 69, 0.5)'   // danger
+                ],
+                borderColor: [
+                    'rgb(40, 167, 69)',
+                    'rgb(220, 53, 69)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return value.toLocaleString('tr-TR') + ' ₺';
+                        }
+                    }
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.parsed.y.toLocaleString('tr-TR') + ' ₺';
+                        }
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %} 

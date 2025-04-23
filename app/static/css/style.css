@@ -1,0 +1,119 @@
+/* Genel Stiller */
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex: 1;
+}
+
+/* Navbar Stilleri */
+.navbar-brand i {
+    color: #ffd700;
+}
+
+/* Kart Stilleri */
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    border: none;
+    border-radius: 0.5rem;
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+/* Tablo Stilleri */
+.table {
+    margin-bottom: 0;
+}
+
+.table th {
+    border-top: none;
+    background-color: #f8f9fa;
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+/* Form Stilleri */
+.form-control:focus,
+.form-select:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* Badge Stilleri */
+.badge {
+    padding: 0.5em 0.75em;
+    font-weight: 500;
+}
+
+/* Button Stilleri */
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+.btn-outline-primary:hover i,
+.btn-outline-danger:hover i {
+    color: white;
+}
+
+/* Modal Stilleri */
+.modal-content {
+    border: none;
+    border-radius: 0.5rem;
+}
+
+.modal-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    border-top-left-radius: 0.5rem;
+    border-top-right-radius: 0.5rem;
+}
+
+/* Alert Stilleri */
+.alert {
+    border: none;
+    border-radius: 0.5rem;
+}
+
+/* Footer Stilleri */
+footer {
+    background-color: #343a40;
+    color: white;
+    padding: 3rem 0;
+    margin-top: auto;
+}
+
+footer h5 {
+    color: #ffd700;
+    margin-bottom: 1rem;
+}
+
+footer p {
+    margin-bottom: 0.5rem;
+}
+
+footer hr {
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Responsive Ayarlar */
+@media (max-width: 768px) {
+    .card-body {
+        padding: 1rem;
+    }
+    
+    .table-responsive {
+        margin: 0 -1rem;
+    }
+    
+    .modal-dialog {
+        margin: 0.5rem;
+    }
+} 

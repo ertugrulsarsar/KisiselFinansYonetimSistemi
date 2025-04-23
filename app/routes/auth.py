@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from werkzeug.security import generate_password_hash
 from app.models import db, User
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
+from app.services import AuthService
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -9,41 +10,27 @@ auth_bp = Blueprint('auth', __name__)
 def register():
     """Yeni kullanıcı kaydı"""
     data = request.get_json()
+    user, message = AuthService.register_user(data)
     
-    # Kullanıcı adı ve email kontrolü
-    if User.query.filter_by(username=data['username']).first():
-        return jsonify({'error': 'Bu kullanıcı adı zaten kullanımda'}), 400
-    if User.query.filter_by(email=data['email']).first():
-        return jsonify({'error': 'Bu email adresi zaten kullanımda'}), 400
-    
-    # Yeni kullanıcı oluştur
-    user = User(
-        username=data['username'],
-        email=data['email'],
-        first_name=data.get('first_name'),
-        last_name=data.get('last_name')
-    )
-    user.set_password(data['password'])
-    
-    db.session.add(user)
-    db.session.commit()
-    
-    return jsonify({'message': 'Kullanıcı başarıyla oluşturuldu', 'user_id': user.id}), 201
+    if user:
+        return jsonify({
+            'message': message,
+            'user_id': user.id
+        }), 201
+    return jsonify({'error': message}), 400
 
 @auth_bp.route('/login', methods=['POST'])
 def login():
     """Kullanıcı girişi"""
     data = request.get_json()
-    user = User.query.filter_by(username=data['username']).first()
+    result, message = AuthService.login_user(data['username'], data['password'])
     
-    if user and user.check_password(data['password']):
-        access_token = create_access_token(identity=user.id)
+    if result:
         return jsonify({
-            'access_token': access_token,
-            'user': user.to_dict()
+            'access_token': result['token'],
+            'user': result['user'].to_dict()
         }), 200
-    
-    return jsonify({'error': 'Geçersiz kullanıcı adı veya şifre'}), 401
+    return jsonify({'error': message}), 401
 
 @auth_bp.route('/profile', methods=['GET'])
 @jwt_required()
@@ -62,25 +49,23 @@ def profile():
 def update_profile():
     """Kullanıcı profil güncelleme"""
     current_user_id = get_jwt_identity()
-    user = User.query.get(current_user_id)
-    
-    if not user:
-        return jsonify({'error': 'Kullanıcı bulunamadı'}), 404
-    
     data = request.get_json()
     
-    # Güvenli güncelleme
-    if 'first_name' in data:
-        user.first_name = data['first_name']
-    if 'last_name' in data:
-        user.last_name = data['last_name']
-    if 'email' in data:
-        if User.query.filter(User.email == data['email'], User.id != current_user_id).first():
-            return jsonify({'error': 'Bu email adresi zaten kullanımda'}), 400
-        user.email = data['email']
-    if 'password' in data:
-        user.set_password(data['password'])
+    user, message = AuthService.update_user_profile(current_user_id, data)
     
-    db.session.commit()
+    if user:
+        return jsonify({
+            'message': message,
+            'user': user.to_dict()
+        }), 200
+    return jsonify({'error': message}), 400
+
+@auth_bp.route('/reset-password', methods=['POST'])
+def reset_password_request():
+    """Şifre sıfırlama isteği"""
+    data = request.get_json()
+    user, message = AuthService.reset_password_request(data['email'])
     
-    return jsonify({'message': 'Profil güncellendi', 'user': user.to_dict()}), 200 
+    if user:
+        return jsonify({'message': message}), 200
+    return jsonify({'error': message}), 400 

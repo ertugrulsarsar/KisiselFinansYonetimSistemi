@@ -1,0 +1,286 @@
+{% extends "base.html" %}
+
+{% block title %}İşlemler - Kişisel Finans Yönetimi{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h2><i class="fas fa-exchange-alt me-2"></i>İşlemler</h2>
+    </div>
+    <div class="col-md-4 text-end">
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addTransactionModal">
+            <i class="fas fa-plus me-1"></i>Yeni İşlem
+        </button>
+    </div>
+</div>
+
+<!-- Filtreler -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form id="filterForm" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Başlangıç Tarihi</label>
+                <input type="date" class="form-control" name="start_date" id="startDate">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Bitiş Tarihi</label>
+                <input type="date" class="form-control" name="end_date" id="endDate">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Kategori</label>
+                <select class="form-select" name="category_id" id="categoryFilter">
+                    <option value="">Tümü</option>
+                    {% for category in categories %}
+                    <option value="{{ category.id }}">{{ category.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">İşlem Tipi</label>
+                <select class="form-select" name="type" id="typeFilter">
+                    <option value="">Tümü</option>
+                    <option value="income">Gelir</option>
+                    <option value="expense">Gider</option>
+                </select>
+            </div>
+            <div class="col-12 text-end">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-filter me-1"></i>Filtrele
+                </button>
+                <button type="reset" class="btn btn-secondary">
+                    <i class="fas fa-undo me-1"></i>Sıfırla
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- İşlem Listesi -->
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Tarih</th>
+                        <th>Kategori</th>
+                        <th>Açıklama</th>
+                        <th>Tip</th>
+                        <th class="text-end">Tutar</th>
+                        <th class="text-end">İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody id="transactionsList">
+                    {% for transaction in transactions %}
+                    <tr>
+                        <td>{{ transaction.transaction_date.strftime('%d.%m.%Y') }}</td>
+                        <td>{{ transaction.category.name }}</td>
+                        <td>{{ transaction.description }}</td>
+                        <td>
+                            {% if transaction.transaction_type == 'income' %}
+                            <span class="badge bg-success">Gelir</span>
+                            {% else %}
+                            <span class="badge bg-danger">Gider</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">{{ "%.2f"|format(transaction.amount) }} ₺</td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-outline-primary edit-transaction" 
+                                    data-id="{{ transaction.id }}"
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#editTransactionModal">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger delete-transaction"
+                                    data-id="{{ transaction.id }}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Yeni İşlem Modal -->
+<div class="modal fade" id="addTransactionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Yeni İşlem Ekle</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addTransactionForm">
+                    <div class="mb-3">
+                        <label class="form-label">Kategori</label>
+                        <select class="form-select" name="category_id" required>
+                            {% for category in categories %}
+                            <option value="{{ category.id }}">{{ category.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Tutar</label>
+                        <input type="number" class="form-control" name="amount" step="0.01" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Açıklama</label>
+                        <textarea class="form-control" name="description" rows="2"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">İşlem Tipi</label>
+                        <select class="form-select" name="transaction_type" required>
+                            <option value="income">Gelir</option>
+                            <option value="expense">Gider</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Tarih</label>
+                        <input type="date" class="form-control" name="transaction_date" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                <button type="button" class="btn btn-primary" id="saveTransaction">Kaydet</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Düzenle Modal -->
+<div class="modal fade" id="editTransactionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">İşlem Düzenle</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editTransactionForm">
+                    <input type="hidden" name="transaction_id">
+                    <div class="mb-3">
+                        <label class="form-label">Kategori</label>
+                        <select class="form-select" name="category_id" required>
+                            {% for category in categories %}
+                            <option value="{{ category.id }}">{{ category.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Tutar</label>
+                        <input type="number" class="form-control" name="amount" step="0.01" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Açıklama</label>
+                        <textarea class="form-control" name="description" rows="2"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">İşlem Tipi</label>
+                        <select class="form-select" name="transaction_type" required>
+                            <option value="income">Gelir</option>
+                            <option value="expense">Gider</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Tarih</label>
+                        <input type="date" class="form-control" name="transaction_date" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                <button type="button" class="btn btn-primary" id="updateTransaction">Güncelle</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Yeni işlem kaydetme
+    $('#saveTransaction').click(function() {
+        const formData = new FormData($('#addTransactionForm')[0]);
+        const data = Object.fromEntries(formData.entries());
+        
+        $.ajax({
+            url: '{{ url_for("transaction.create_transaction") }}',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(data),
+            success: function(response) {
+                location.reload();
+            },
+            error: function(xhr) {
+                alert('Hata oluştu: ' + xhr.responseJSON.error);
+            }
+        });
+    });
+
+    // İşlem düzenleme modalını doldur
+    $('.edit-transaction').click(function() {
+        const id = $(this).data('id');
+        $.get(`/api/transactions/${id}`, function(transaction) {
+            const form = $('#editTransactionForm');
+            form.find('[name=transaction_id]').val(transaction.id);
+            form.find('[name=category_id]').val(transaction.category_id);
+            form.find('[name=amount]').val(transaction.amount);
+            form.find('[name=description]').val(transaction.description);
+            form.find('[name=transaction_type]').val(transaction.transaction_type);
+            form.find('[name=transaction_date]').val(transaction.transaction_date);
+        });
+    });
+
+    // İşlem güncelleme
+    $('#updateTransaction').click(function() {
+        const form = $('#editTransactionForm');
+        const id = form.find('[name=transaction_id]').val();
+        const formData = new FormData(form[0]);
+        const data = Object.fromEntries(formData.entries());
+        
+        $.ajax({
+            url: `/api/transactions/${id}`,
+            method: 'PUT',
+            contentType: 'application/json',
+            data: JSON.stringify(data),
+            success: function(response) {
+                location.reload();
+            },
+            error: function(xhr) {
+                alert('Hata oluştu: ' + xhr.responseJSON.error);
+            }
+        });
+    });
+
+    // İşlem silme
+    $('.delete-transaction').click(function() {
+        if (confirm('Bu işlemi silmek istediğinizden emin misiniz?')) {
+            const id = $(this).data('id');
+            $.ajax({
+                url: `/api/transactions/${id}`,
+                method: 'DELETE',
+                success: function() {
+                    location.reload();
+                },
+                error: function(xhr) {
+                    alert('Hata oluştu: ' + xhr.responseJSON.error);
+                }
+            });
+        }
+    });
+
+    // Filtreleme
+    $('#filterForm').submit(function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const params = new URLSearchParams(formData);
+        window.location.search = params.toString();
+    });
+});
+</script>
+{% endblock %} 

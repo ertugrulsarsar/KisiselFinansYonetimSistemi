@@ -4,27 +4,40 @@ from flask_cors import CORS
 from app.models import init_db
 from app.routes import api_bp
 from config import Config
+import logging
 
 def create_app():
     """Flask uygulamasını oluşturur ve yapılandırır"""
+    # Loglama seviyesini ayarla
+    logging.basicConfig(level=logging.DEBUG)
+    logger = logging.getLogger(__name__)
+    
     app = Flask(__name__)
     app.config.from_object(Config)
     
-    # CORS'u etkinleştir
+    logger.info("CORS yapılandırılıyor...")
     CORS(app)
     
-    # JWT'yi başlat
+    logger.info("JWT başlatılıyor...")
     JWTManager(app)
     
-    # Veritabanını başlat
-    init_db(app)
+    logger.info("Veritabanı başlatılıyor...")
+    try:
+        init_db(app)
+        logger.info("Veritabanı başarıyla başlatıldı!")
+    except Exception as e:
+        logger.error(f"Veritabanı başlatılırken hata oluştu: {str(e)}")
+        raise
     
-    # API route'larını kaydet
-    app.register_blueprint(api_bp)
-    
+    # Ana route
     @app.route('/')
     def index():
         return 'Kişisel Finans Yönetim Sistemi API çalışıyor!'
+    
+    logger.info("Route'lar kaydediliyor...")
+    # Ana API blueprint'i kaydet
+    app.register_blueprint(api_bp, url_prefix='/api')
+    logger.info("Route'lar başarıyla kaydedildi!")
     
     return app
 
