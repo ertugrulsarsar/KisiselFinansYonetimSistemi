@@ -7,8 +7,8 @@ load_dotenv()
 class Config:
     # Veritabanı bağlantı bilgileri
     SQLALCHEMY_DATABASE_URI = (
-        f"@{os.getenv('DESKTOP-E2G3SHM')}/{os.getenv('FinansApp')}"
-        f"?driver={os.getenv('DB_DRIVER', 'ODBC+Driver+17+for+SQL+Server', trust_server_certificate=True)}"
+        f"mssql+pyodbc://@DESKTOP-E2G3SHM/FinansApp"
+        f"?driver=ODBC+Driver+17+for+SQL+Server&TrustServerCertificate=yes"
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     

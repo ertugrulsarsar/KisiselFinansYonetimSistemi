@@ -11,8 +11,8 @@ class Category(db.Model):
     type = db.Column(db.String(10), nullable=False)  # 'income' veya 'expense'
     color = db.Column(db.String(7))  # Örnek: #FF0000
     icon = db.Column(db.String(50))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
 
     # İlişkiler
     transactions = db.relationship('Transaction', backref='category', lazy=True)
