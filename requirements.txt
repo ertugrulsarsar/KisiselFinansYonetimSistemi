@@ -1,6 +1,11 @@
-Flask
-Python-dotenv
-pyodbc
-Flask-SQLAlchemy
+Flask==2.0.1
+Flask-SQLAlchemy==2.5.1
+pyodbc==4.0.39
+python-dotenv==0.19.0
+SQLAlchemy==1.4.23
+werkzeug==2.0.1
+python-jose==3.3.0
+passlib==1.7.4
+flask-cors==4.0.0
 Flask-Migrate
 

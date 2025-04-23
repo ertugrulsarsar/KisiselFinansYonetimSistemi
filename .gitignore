@@ -1,1 +1,11 @@
 .env
+.cursor/rules
+api-design.mdc
+coding-standards.mdc
+project-structure.mdc
+__pycache__/
+*.pyc
+.vscode/
+.idea/
+
+
